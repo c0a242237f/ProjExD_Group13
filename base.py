@@ -1,4 +1,5 @@
 import pygame
+import os
 
 # 1. 定数と初期設定
 # pygame.init()
@@ -15,6 +16,18 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (50, 200, 50)   # プレイヤーの色
 BROWN = (139, 69, 19)   # ブロックの色
+
+class Absurb:
+    def __init__(self, player_rect):
+        self.img = pygame.image.load("fig/tatsumaki.png")
+        self.img = pygame.transform.rotozoom(self.img, 270, 0.05)
+        self.rect = self.img.get_rect()
+        self.rect.center = ((player_rect.centerx + 40, player_rect.centery))
+
+    def update(self, player_rect):
+        self.rect.centerx = player_rect.centerx + 40
+        self.rect.centery = player_rect.centery
+
 
 # 画面設定
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -58,6 +71,14 @@ is_on_ground = False     # 地面（ブロック）に接地しているか
 player_move_left = False # 左に移動中か
 player_move_right = False# 右に移動中か
 
+enemy_image = pygame.image.load("fig/syujinkou_yoko.png")
+enemy_image = pygame.transform.rotozoom(enemy_image, 0, 0.1)
+enemy_rect = enemy_image.get_rect()
+enemy_rect.center = (300,300)
+enemy_size = 1.0
+
+absurbs = []
+
 # 5. ゲームループ
 running = True
 while running:
@@ -76,6 +97,8 @@ while running:
             if event.key == pygame.K_SPACE and is_on_ground:
                 player_velocity_y = JUMP_STRENGTH # 上向きの速度を与える
                 is_on_ground = False
+            if event.key == pygame.K_a:
+                absurbs.append(Absurb(player_rect))
         
         # キーが離された時
         if event.type == pygame.KEYUP:
@@ -83,6 +106,8 @@ while running:
                 player_move_left = False
             if event.key == pygame.K_RIGHT:
                 player_move_right = False
+            if event.key == pygame.K_a:
+                absurbs.pop()
 
     # 7. プレイヤーのロジック更新 (移動と当たり判定)
     
@@ -102,6 +127,11 @@ while running:
                 player_rect.right = block.left # 右端をブロックの左端に合わせる
             elif player_movement_x < 0: # 左に移動中に衝突
                 player_rect.left = block.right # 左端をブロックの右端に合わせる
+    if len(absurbs):
+        if player_rect.colliderect(absurbs[0]):
+            enemy_size -= 0.05
+            enemy_image = pygame.transform.rotozoom(enemy_image, 0, enemy_size)
+            enemy_rect.centery += 10
 
     # --- 垂直方向（重力・ジャンプ）の移動と当たり判定 ---
     player_velocity_y += GRAVITY # 重力を速度に加算
@@ -121,13 +151,20 @@ while running:
 
     # 8. 描画処理
     screen.fill(BLACK) # 画面を黒で塗りつぶし
+
+    for i in absurbs:
+        i.update(player_rect)
     
     # ステージ（ブロック）を描画
     for block in block_rects:
         pygame.draw.rect(screen, BROWN, block)
+
+    if len(absurbs):
+        screen.blit(absurbs[0].img, absurbs[0].rect)
         
     # プレイヤーを描画
     pygame.draw.rect(screen, GREEN, player_rect)
+    screen.blit(enemy_image, enemy_rect)
     
     # 画面を更新
     pygame.display.flip()
