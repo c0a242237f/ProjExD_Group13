@@ -5,6 +5,7 @@ import math
 import sys
 import time
 
+
 # 1. 定数と初期設定
 pygame.init()  # pygameを初期化
 SCREEN_WIDTH = 1100
@@ -127,25 +128,22 @@ class Bomb(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-# 2. ステージデータ (0=空, 1=ブロック)
-# 画面下部が地面、途中に浮島があるマップ 元のマップデータ
-# map_data = [ 
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
-#     [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-#     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-#     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-#     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-#     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-#     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-# ]
+class SlotEnemy(pygame.sprite.Sprite):
+    """
+    スロットの敵に関するクラス
+    """
+    def __init__(self):
+        slot_img = pygame.image.load("fig/slot.png")
+        self.image = pygame.transform.rotozoom(slot_img, 0, 0.125)  # 画像の設定
+        self.rect = pygame.Rect(800, 100, TILE_SIZE, TILE_SIZE)  # 初期位置(100,100)と当たり判定用のrect
+        self.image_rect = self.image.get_rect()  # 画像表示用のrect
+        self.image_rect.center = self.rect.center # 画像を表示する用の中心を設定
+
+    def draw(self, screen):
+        """
+        スロットの敵を描画する
+        """
+        screen.blit(self.image, self.image_rect)
 
 map_data = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -204,7 +202,7 @@ while running:
                 player_move_left = True
             if event.key == pygame.K_RIGHT:
                 player_move_right = True
-            if event.key == pygame.K_SPACE and is_on_ground:
+            if event.key == pygame.K_UP and is_on_ground:
                 player_velocity_y = JUMP_STRENGTH # 上向きの速度を与える
                 is_on_ground = False
         
@@ -251,10 +249,10 @@ while running:
                 player_velocity_y = 0 # 上昇速度をリセット（頭を打った）
 
     # 爆弾の敵がプレイヤーに向かって投げる1〜2秒ごとに
-    for enemy in bomb_enemies:
-        if tmr >= enemy.next_throw:
-            bombs.add(Bomb(enemy))
-            enemy.next_throw = tmr + random.randint(60, 120)
+    for b_enemy in bomb_enemies:
+        if tmr >= b_enemy.next_throw:
+            bombs.add(Bomb(b_enemy))
+            b_enemy.next_throw = tmr + random.randint(60, 120)
 
     # 8. 描画処理
     screen.fill(WHITE) # 画面を黒で塗りつぶし
@@ -267,14 +265,14 @@ while running:
     pygame.draw.rect(screen, GREEN, player_rect)
     
     # 爆弾の敵の更新と描画
-    for enemy in bomb_enemies:
-        enemy.update(block_rects)
-        enemy.draw(screen)
+    for b_enemy in bomb_enemies:
+        b_enemy.update(block_rects)
+        b_enemy.draw(screen)
     # 投げられた爆弾の更新と描画
     for b in list(bombs):
         b.update(block_rects)
         b.draw(screen)
-    
+
     # 画面を更新
     pygame.display.flip()
     
