@@ -11,7 +11,7 @@ LEFT_BOUND = SCREEN_WIDTH // 3
 RIGHT_BOUND = SCREEN_WIDTH * 2 // 3
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 ADD_STAGE_BLOCK = 100
-TILE_SIZE_X = 40
+TILE_SIZE_X = 100
 TILE_SIZE_Y = 40
 GRAVITY = 0.8         # 重力
 JUMP_STRENGTH = -15   # ジャンプ力 (Y軸は上がマイナス)
@@ -62,84 +62,64 @@ def make_float_land(map_data: "list", add_range: "tuple", num):
         X = random.randrange(10, len(map_data[0]))
         Y = random.randrange(add_range[0], add_range[1])
         if map_data[len(map_data) - Y][X] == 0 and map_data[len(map_data) - Y + 1][X] == 0 and map_data[len(map_data) - Y + 2][X] == 0:
-            for j in width:
+            for j in range(width):
                 map_data[len(map_data) - Y][X + j] = 3
+    # print(maked_floatland)
     return map_data
 
-# def extend(map_data, stage_width, max_ground_height = 5):
-#     """
-#     ステージを拡張する関数
-#     引数: 追加するブロックの数
-#     戻り値: 拡張したマップのリスト
-#     """  
-#     ini_stage_width = len(map_data[0])
-#     for i in range(-1, -1 * len(map_data), -1):
-#         if i >= -1 * max_ground_height:
-#             probs = [0.2, 0.5, 0.8, 1.0, 1.0]
-#             if i >= -2:
-#                 for j in range(stage_width):
-#                     map_data[i].append(1)
-#                 else:
-#                     continue
+def make_float_land(map_data: "list", add_range: "tuple", num):
+    maked_floatland = 0
+    attempt = 0
+    while maked_floatland <= num:
+        width = random.randrange(2,4)
+        X = random.randrange(10, len(map_data[0]))
+        Y = random.randrange(add_range[0], add_range[1] + 1)
+        if map_data[len(map_data) - Y][X] == 0 and map_data[len(map_data) - Y + 1][X] == 0 and map_data[len(map_data) - Y + 2][X] == 0:
+            maked_floatland += 1
+            if X + width >= len(map_data[0]):
+                X = len(map_data) - width
+            for j in range(width):
+                map_data[len(map_data) - Y][X + j] = 3
+        else:
+            attempt += 1
+            if attempt == 10000:
+                print("impossible")
+                break
+    # print(maked_floatland)
+    return map_data
 
-#             for j in range(stage_width):
-#                 p = probs[i] if abs(i) < len(probs) else 0
-#                 generate_prob = random.randint(0,100) / 100
-#                 pos = len(map_data[0])
-#                 if generate_prob <= p and map_data[i + 1][pos - 1] == 1:
-#                     map_data[i].append(1)
-#                 else:
-#                     map_data[i].append(0)
-#             else:
-#                 map_data[i].append(2)
-#         else:
-#             for j in range(stage_width):
-#                 map_data[i].append(0)
-                                
-#     return map_data
 
-def gravity(instance, block_rects):
+
+def gravity(instance, blocks):
     instance.vy += GRAVITY # 重力を速度に加算
     instance.rect.y += instance.vy # Y方向に動かす
     instance.is_on_ground = False # 毎フレーム「接地していない」と仮定
-    for block in block_rects:
-        if instance.rect.colliderect(block):
+    instance.in_on_float = False
+    
+    for block in blocks:
+        if instance.rect.colliderect(block[0]):
                 if instance.vy > 0: # 落下中に衝突
-                    instance.rect.bottom = block.top # 足元をブロックの上端に合わせる
+                    instance.rect.bottom = block[0].top # 足元をブロックの上端に合わせる
                     instance.vy = 0 # 落下速度をリセット
-                    instance.is_on_ground = True   # 接地フラグを立てる
+                    if block[1] == 2:
+                        instance.is_on_ground = True   # 接地フラグを立てる
+                    elif block[1] == 3:
+                        instance.is_on_ground = True
                 elif instance.vy < 0: # ジャンプ中に衝突
-                    instance.rect.top = block.bottom # 頭をブロックの下端に合わせる
+                    instance.rect.top = block[0].bottom # 頭をブロックの下端に合わせる
                     instance.vy = 0 # 上昇速度をリセット（頭を打った）
  
-
-# def Extend(map_data, stage_width):#実験用
-#     """
-#     ステージを拡張する関数
-#     引数: 追加するブロックの数
-#     戻り値: 拡張したマップのリスト
-#     """
-#     for h in range(stage_width):
-#         for i in range(len(map_data)):
-#             if i < len(map_data) - 3:
-#                 if i == 4:
-#                     map_data[i].append(random.randrange(0,2))
-#                 else:
-#                     map_data[i].append(0)
-#             else:
-#                 map_data[i].append(1)
-#     return map_data
-
 class Player(pg.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.img = pg.image.load("fig/syujinkou_yoko.png")
-        self.img = pg.transform.rotozoom(self.img, 0, 0.03)
+        self.img = pg.image.load("fig/yoko1.png")
+        # self.img = pg.transform.rotozoom(self.img, 0,)
         self.rect = self.img.get_rect()
         self.vy = 0
         self.movex = 0
         self.screen_x = 0
         self.is_on_ground = False
+        self.is_on_float = False
         self.move_left = False
         self.move_right = False
     
@@ -159,16 +139,6 @@ class Player(pg.sprite.Sprite):
         max_camera_x = stage_width * TILE_SIZE_X - SCREEN_WIDTH #カメラの動く範囲を総タイル数と画面のサイズから計算
         # print(max_camera_x)
         camera_x = max(0, min(camera_x, max_camera_x))
-
-        # X方向の衝突チェック
-        for block in block_rect:
-            if self.rect.colliderect(block):
-                if self.movex > 0: # 右に移動中に衝突
-                    self.rect.right = block.left # 右端をブロックの左端に合わせる
-                elif self.movex < 0: # 左に移動中に衝突
-                    self.rect.left = block.right # 左端をブロックの右端に合わせる
-        
-        gravity(self, block_rects)
         
         return camera_x
 
@@ -202,6 +172,12 @@ def main():
     pg.display.set_caption("2Dアクションゲーム デモ")
     clock = pg.time.Clock()
 
+    bg_img = pg.image.load("fig/nightcity_star_bg1.png")
+    bg_flip = pg.transform.flip(bg_img, True, False)
+    bg_width = bg_img.get_width()
+    pg.mixer.music.load("fig/魔王魂(ファンタジー).mp3")
+    pg.mixer.music.play(loops = -1)
+
     # 2. ステージデータ (0=空, 1=ブロック)
     # 画面下部が地面、途中に浮島があるマップ
     map_data = [
@@ -230,7 +206,7 @@ def main():
     # (ゲーム開始時に一度だけ計算する)
     map_data = extend(map_data, ADD_STAGE_BLOCK, probs)
     map_data = ground_surface(map_data)
-    map_data = make_float_land(map_data, (5,7), 5)
+    map_data = make_float_land(map_data, (6,10), 10)
     block_rects = []
     surface_rects = []
     floatland_rects = []
@@ -238,11 +214,11 @@ def main():
         for x, tile_type in enumerate(row):
             if tile_type == 1:
                 # (x座標, y座標, 幅, 高さ) のRectを作成
-                block_rects.append(pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y, TILE_SIZE_X, TILE_SIZE_Y))
+                block_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y, TILE_SIZE_X, TILE_SIZE_Y), 1))
             elif tile_type == 2:
-                surface_rects.append(pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2))
+                surface_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2), 2))
             elif tile_type == 3:
-                floatland_rects.append(pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2))
+                floatland_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2), 3))
     # 4. プレイヤー設定
     player = Player() #プレイヤー
     enemys = pg.sprite.Group()
@@ -279,6 +255,32 @@ def main():
                     player.move_right = False
 
         # 7. プレイヤーのロジック更新 (移動と当たり判定)
+                # X方向の衝突チェック
+        for block in surface_rects:
+            if player.rect.colliderect(block[0]):
+                if player.movex > 0: # 右に移動中に衝突
+                    player.rect.right = block[0].left # 右端をブロックの左端に合わせる
+                elif player.movex < 0: # 左に移動中に衝突
+                    player.rect.left = block[0].right # 左端をブロックの右端に合わせる
+
+        for block in block_rects:
+            if player.rect.colliderect(block[0]):
+                if player.movex > 0: # 右に移動中に衝突
+                    player.rect.right = block[0].left # 右端をブロックの左端に合わせる
+                elif player.movex < 0: # 左に移動中に衝突
+                    player.rect.left = block[0].right # 左端をブロックの右端に合わせる
+        
+        for block in floatland_rects:
+            if player.rect.colliderect(block[0]):
+                if player.movex > 0: # 右に移動中に衝突
+                    player.rect.right = block[0].left # 右端をブロックの左端に合わせる
+                elif player.movex < 0: # 左に移動中に衝突
+                    player.rect.left = block[0].right # 左端をブロックの右端に合わせる
+        
+        # player.vy += GRAVITY # 重力を速度に加算
+        # player.rect.y += player.vy
+        gravity(player, surface_rects + floatland_rects)
+        # gravity(player,floatland_rects)
 
         # 8. 描画処理
         screen.fill(BLACK) # 画面を黒で塗りつぶし
@@ -290,11 +292,15 @@ def main():
 
         # プレイヤーを描画
         camera_x = player.update(len(map_data[0]), [surface_rects, floatland_rects], camera_x)
+        scroll_x = -camera_x % bg_width
         # print(camera_x)
+        
+        screen.blit(bg_img, (scroll_x - bg_width, -100))
+        screen.blit(bg_img, (scroll_x, -100))
         screen.blit(player.img, (player.rect.x - camera_x, player.rect.y))
         
         # ステージ（ブロック）を描画
-        for block in block_rects:
+        for block, type in block_rects:
             draw_rect = pg.Rect(
                 block.x - camera_x, #ブロックの出現位置を調整
                 block.y,
@@ -302,7 +308,7 @@ def main():
                 block.height
             )
             pg.draw.rect(screen, BROWN, draw_rect)
-        for block in surface_rects:
+        for block, type in surface_rects:
             draw_rect = pg.Rect(
                 block.x - camera_x,
                 block.y,
@@ -310,7 +316,7 @@ def main():
                 block.height
             )
             pg.draw.rect(screen, (255, 0, 255), draw_rect)
-        for block in floatland_rects:
+        for block,type in floatland_rects:
             draw_rect = pg.Rect(                
                 block.x - camera_x,
                 block.y,
