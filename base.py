@@ -15,7 +15,20 @@ JUMP_STRENGTH = -15   # ジャンプ力 (Y軸は上がマイナス)
 PLAYER_SPEED = 5      # 左右の移動速度
 ENEMY_NUM = 1         # 敵の数
 #ーーーーーーーーーーーーーーーーーーーーーーーーーー
+#---まだ
+def start_page():
+    pass
+#------
 
+#---まだ
+def gameover():
+    pass
+#------
+
+#---まだ
+def game_clear():
+    pass
+#------
 
 def extend(map_data: "list[list[int]]", add_stage_width: "int", probs: "list[int]") -> list[list[int]]:
     """
@@ -75,16 +88,14 @@ def make_float_land(map_data: "list[list[int]]", add_range: "tuple[int]", num: "
                 map_data[len(map_data) - Y][X + j] = 3
     return map_data
 
-def hover(instance: "Player"):
-    instance.vy -= 15
-
+#---修正
 def walled(instance: "object", blocks: "list[tuple[object, int]]") -> None:
     """
     壁衝突判定を行う関数
     内容: 壁に衝突したとき、自身の位置を壁端に合わせる。
     引数: 衝突判定を行うオブジェクト, 衝突するブロックを保持したリスト
     """
-    for block, type in blocks:
+    for block in blocks:
         if instance.rect.colliderect(block): 
             if instance.movex > 0: # 右に移動中に衝突
                 instance.rect.right = block.left # 右端をブロックの左端に合わせる
@@ -92,7 +103,9 @@ def walled(instance: "object", blocks: "list[tuple[object, int]]") -> None:
                 instance.rect.left = block.right # 左端をブロックの右端に合わせる
             instance.movex *= -1
             instance.world[0] = instance.rect.x
+#-------
 
+#---修正
 def gravity(instance: "object", blocks: "list[tuple[object, int]]") -> None:
     """
     重力を適用し、地面との衝突判定を行う関数
@@ -106,21 +119,22 @@ def gravity(instance: "object", blocks: "list[tuple[object, int]]") -> None:
     instance.in_on_float = False
     
     for block in blocks:
-        if instance.rect.colliderect(block[0]):
+        if instance.rect.colliderect(block):
                 if instance.vy > 0: # 落下中に衝突
-                    instance.rect.bottom = block[0].top # 足元をブロックの上端に合わせる
+                    instance.rect.bottom = block.top # 足元をブロックの上端に合わせる
                     instance.world[1] = instance.rect.y
                     instance.hover_num = 0
                     instance.vy = 0 # 落下速度をリセット
-                    if block[1] == 2:
+                    if block == 2:
                         instance.is_on_ground = True   # 接地フラグを立てる
-                    elif block[1] == 3:
+                    elif block == 3:
                         instance.is_on_float = True
                 elif instance.vy < 0: # ジャンプ中に衝突
-                    instance.rect.top = block[0].bottom # 頭をブロックの下端に合わせる
+                    instance.rect.top = block.bottom # 頭をブロックの下端に合わせる
                     instance.world[1] = instance.rect.y
                     instance.vy = 0 # 上昇速度をリセット（頭を打った）
- 
+#------
+
 class Assets:
     def __init__(self):
         self.bg = pg.image.load("fig/night_plain_bg.png")
@@ -128,6 +142,26 @@ class Assets:
         self.weeds = pg.image.load("fig/weeds(extend).png")
         self.cloud = pg.image.load("fig/cloud(extend).png")
 
+        self.init_map = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0],
+            [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ]
+        self.probs = [0.5, 0.7, 0.9, 1.0, 1.0]
+
+#---修正
 class Player(pg.sprite.Sprite):
     """
     操作キャラクターのクラス
@@ -185,7 +219,9 @@ class Player(pg.sprite.Sprite):
         self.vy += JUMP_STRENGTH
         self.hover_num += 1
         return
+#---
 
+#---修正
 class Enemy(pg.sprite.Sprite):
     """
     敵を司るクラス
@@ -213,12 +249,16 @@ class Enemy(pg.sprite.Sprite):
         self.rect.y = self.world[1]
         # self.rect.center = (self.rect.centerx - self.movex, self.rect.centery)        
         self.rect.x = self.world[0] - camera_x
+#------
 
+#---まだ
 class Goal(pg.sprite.Sprite):
     def __init__(self):
         super().__init__()
         # self.image = pg.image.load("")
+#------
 
+#---まだ
 class Score:
     def __init__(self):
         self.pic = pg.font.Font(None, 80)
@@ -227,70 +267,50 @@ class Score:
     
     def update(self):
         self.txt = self.pic.render(f"Score: {self.value}", True, (255, 255, 255))
-
+#------
 
 def main():
-    # 画面設定
+    # ーーーーー画面設定ーーーーー
     screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pg.display.set_caption("2Dアクションゲーム デモ")
     clock = pg.time.Clock()
+    # ーーーーーーーーーーーーーー
+
+    assets = Assets()
 
     bg_img = pg.image.load("fig/night_plain_bg.png")
-    # bg_flip = pg.transform.flip(bg_img, True, False)
     bg_width = bg_img.get_width()
     pg.mixer.music.load("fig/魔王魂(ファンタジー).mp3")
     pg.mixer.music.play(loops = -1)
 
-    # ground = Ground()
-    ground_img = pg.image.load("fig/ground2.png")
-    weeds_img = pg.image.load("fig/weeds(extend).png")
-    cloud_img = pg.image.load("fig/cloud(extend).png")
-    # ground_rect = ground
+    # ground_img = pg.image.load("fig/ground2.png")
+    # weeds_img = pg.image.load("fig/weeds(extend).png")
+    # cloud_img = pg.image.load("fig/cloud(extend).png")
 
-    # 2. ステージデータ (0=空, 1=ブロック)
-    # 画面下部が地面、途中に浮島があるマップ
-    map_data = [
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0],
-        [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    ]
-
-    probs = [0.5, 0.7, 0.9, 1.0, 1.0]
-
-
-    # 3. ステージの「当たり判定用の四角形(Rect)」リストを作成
-    # (ゲーム開始時に一度だけ計算する)
-    map_data = extend(map_data, ADD_STAGE_BLOCK, probs)
+    map_data = assets.init_map
+    map_data = extend(map_data, ADD_STAGE_BLOCK, assets.probs)
     map_data = ground_surface(map_data)
     map_data = make_float_land(map_data, (6,10), 10)
+
     block_rects = []
     surface_rects = []
     floatland_rects = []
     for y, row in enumerate(map_data):
         for x, tile_type in enumerate(row):
             if tile_type == 1:
-                # (x座標, y座標, 幅, 高さ) のRectを作成
-                # block_rects.append(())
-                block_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y, TILE_SIZE_X, TILE_SIZE_Y), 1))
+                block_rects.append(pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y, TILE_SIZE_X, TILE_SIZE_Y))
             elif tile_type == 2:
-                surface_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2), 2))
+                surface_rects.append(pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2))
             elif tile_type == 3:
-                floatland_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2), 3))
-    # 4. プレイヤー設定
-    player = Player() #プレイヤー
+                floatland_rects.append(pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2))
+
+
+    floar_blocks = surface_rects + floatland_rects
+    all_blocks = block_rects + floar_blocks
+    
     enemys = pg.sprite.Group()
+
+    player = Player() 
     for i in range(ENEMY_NUM):
         enemys.add(Enemy(len(map_data[0])))
     score = Score()
@@ -298,13 +318,13 @@ def main():
     camera_x = 0 #カメラの位置を初期化
 
     # 5. ゲームループ
-    running = True
-    while running:
+    while True:
         
         # 6. イベント処理 (キー操作など)
         for event in pg.event.get():
+            #ゲーム終了
             if event.type == pg.QUIT:
-                running = False
+                return 
             
             # キーが押された時
             if event.type == pg.KEYDOWN:
@@ -312,10 +332,8 @@ def main():
                     player.move_left = True
                 if event.key == pg.K_RIGHT:
                     player.move_right = True
-                if event.key == pg.K_SPACE: #and player.is_on_ground:
-                    # player.vy = JUMP_STRENGTH # 上向きの速度を与える
+                if event.key == pg.K_SPACE:
                     player.hover()
-                    print("hoverd")
                     player.is_on_ground = False
             
             # キーが離された時
@@ -325,99 +343,41 @@ def main():
                 if event.key == pg.K_RIGHT:
                     player.move_right = False
 
-        # 7. プレイヤーのロジック更新 (移動と当たり判定)
-                # X方向の衝突チェック
-        
-        # for block in surface_rects:
-        #     if player.rect.colliderect(block[0]):
-        #         if player.movex > 0: # 右に移動中に衝突
-        #             player.rect.right = block[0].left # 右端をブロックの左端に合わせる
-        #         elif player.movex < 0: # 左に移動中に衝突
-        #             player.rect.left = block[0].right # 左端をブロックの右端に合わせる
-
-        # for block in block_rects:
-        #     if player.rect.colliderect(block[0]):
-        #         if player.movex > 0: # 右に移動中に衝突
-        #             player.rect.right = block[0].left # 右端をブロックの左端に合わせる
-        #         elif player.movex < 0: # 左に移動中に衝突
-        #             player.rect.left = block[0].right # 左端をブロックの右端に合わせる
-        
-        # for block in floatland_rects:
-        #     if player.rect.colliderect(block[0]):
-        #         if player.movex > 0: # 右に移動中に衝突
-        #             player.rect.right = block[0].left # 右端をブロックの左端に合わせる
-        #         elif player.movex < 0: # 左に移動中に衝突
-        #             player.rect.left = block[0].right # 左端をブロックの右端に合わせる
-        
-        # player.vy += GRAVITY # 重力を速度に加算
-        # player.rect.y += player.vy
-        all_blocks = surface_rects + floatland_rects
-        walled(player, all_blocks)
-        gravity(player, all_blocks)
+        walled(player, all_blocks) # 壁衝突判定
+        gravity(player, floar_blocks) # 床衝突判定
         for i in enemys:
             walled(i, all_blocks)
-            gravity(i, all_blocks)
-        # gravity(player,floatland_rects)
+            gravity(i, floar_blocks)
 
-        # 8. 描画処理
-        # screen.fill((255, 255, 255)) # 画面を黒で塗りつぶし
-        
-
-
-
-        
-
-        # プレイヤーを描画
+        #----修正
         prev_camera_x = camera_x
         camera_x = player.update(len(map_data[0]), [surface_rects, floatland_rects], camera_x)
         scroll_x = -camera_x % bg_width
         scroll_speed = camera_x - prev_camera_x
-        # print(camera_x)
-        
+        #-------
+
         screen.blit(bg_img, (scroll_x - bg_width, -100))
         screen.blit(bg_img, (scroll_x, -100))
+        #---修正
         screen.blit(player.dire_img[player.direct], (player.rect.x - camera_x, player.rect.y))
         enemys.update(camera_x)
-        # enemys.update(scroll_speed)
         for enemy in enemys:
             screen.blit(enemy.image, (enemy.rect.centerx - camera_x, enemy.rect.centery))
-        # ステージ（ブロック）を描画
-        for block, type in block_rects:
-            draw_rect = pg.Rect(
-                block.x - camera_x, #ブロックの出現位置を調整
-                block.y,
-                block.width,
-                block.height
-            )
-            # pg.draw.rect(screen, BROWN, draw_rect)
-            screen.blit(ground_img, (block.x - camera_x, block.y, block.width, block.height))
-        for block, type in surface_rects:
-            draw_rect = pg.Rect(
-                block.x - camera_x,
-                block.y,
-                block.width,
-                block.height
-            )
-            # pg.draw.rect(screen, (0, 0, 0, 128), draw_rect)
-            screen.blit(weeds_img, (block.x - camera_x,block.y))
-        for block,type in floatland_rects:
-            # draw_rect = pg.Rect(                
-            #     block.x - camera_x,
-            #     block.y,
-            #     block.width,
-            #     block.height)
-            # pg.draw.rect(screen, (255, 255, 255), draw_rect)
-            screen.blit(cloud_img, (block.x - camera_x, block.y))
-        # 画面を更新
-        # pg.display.flip()
+        #------
+
+        for block in block_rects:
+            screen.blit(assets.ground, (block.x - camera_x, block.y, block.width, block.height))
+        for block in surface_rects:
+            screen.blit(assets.weeds, (block.x - camera_x,block.y))
+        for block in floatland_rects:
+            screen.blit(assets.cloud, (block.x - camera_x, block.y))
+
         score.update()
         screen.blit(score.txt, (SCREEN_WIDTH / 10, SCREEN_HEIGHT - SCREEN_HEIGHT / 10))
-        pg.display.update()
         
-        # 9. FPS (フレームレート) の制御
-        clock.tick(60) # 1秒間に60回ループが回るように調整
+        pg.display.update()
+        clock.tick(60)
 
-# ループが終了したらPygameを終了
 if __name__ == "__main__":
     pg.init()
     main()
