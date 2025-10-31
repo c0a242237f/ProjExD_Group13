@@ -16,7 +16,7 @@ TILE_SIZE_Y = 40
 GRAVITY = 0.8         # 重力
 JUMP_STRENGTH = -15   # ジャンプ力 (Y軸は上がマイナス)
 PLAYER_SPEED = 5      # 左右の移動速度
-ENEMY_NUM = 4
+ENEMY_NUM = 1
 
 # 色の定義
 BLACK = (0, 0, 0)
@@ -88,6 +88,8 @@ def make_float_land(map_data: "list", add_range: "tuple", num):
     # print(maked_floatland)
     return map_data
 
+def hover(instance):
+    instance.vy -= 15
 
 
 def gravity(instance, blocks):
@@ -100,6 +102,7 @@ def gravity(instance, blocks):
         if instance.rect.colliderect(block[0]):
                 if instance.vy > 0: # 落下中に衝突
                     instance.rect.bottom = block[0].top # 足元をブロックの上端に合わせる
+                    instance.hover_num = 0
                     instance.vy = 0 # 落下速度をリセット
                     if block[1] == 2:
                         instance.is_on_ground = True   # 接地フラグを立てる
@@ -114,10 +117,14 @@ class Player(pg.sprite.Sprite):
         super().__init__()
         self.img = pg.image.load("fig/yoko1.png")
         # self.img = pg.transform.rotozoom(self.img, 0,)
+        self.flip = pg.transform.flip(self.img, True, False)
+        self.dire_img = {(1, 0) : self.img, (-1, 0) : self.flip}
         self.rect = self.img.get_rect()
         self.vy = 0
         self.movex = 0
         self.screen_x = 0
+        self.direct = (1, 0)
+        self.hover_num = 0
         self.is_on_ground = False
         self.is_on_float = False
         self.move_left = False
@@ -127,8 +134,10 @@ class Player(pg.sprite.Sprite):
         self.movex = 0
         if self.move_left:
             self.movex -= PLAYER_SPEED
+            self.direct = (-1, 0)
         if self.move_right:
             self.movex += PLAYER_SPEED
+            self.direct = (1, 0)
 
         self.rect.x += self.movex # まずX方向に動かす
         self.screen_x = self.rect.x - camera_x # 画面内のプレイヤーの位置を確認
@@ -141,20 +150,34 @@ class Player(pg.sprite.Sprite):
         camera_x = max(0, min(camera_x, max_camera_x))
         
         return camera_x
+    
+    def hover(self):
+        if self.hover_num == 5:
+            return
+        self.vy += JUMP_STRENGTH
+        self.hover_num += 1
+        return
 
 class Enemy(pg.sprite.Sprite):
-    def __init__(self, pos):
+    def __init__(self, stage_width):
         super().__init__()
-        self.img = pg.image.load("fig/syujinkou_yoko.png")
-        self.img = pg.transform.rotozoom(self.img, 0, 0.1) # 修正予定 画像サイズは元画像の変更の方がよい
-        self.rect = self.img.get_rect()
-        self.rect.center = pos 
+        self.image = pg.image.load("fig/troia.png")
+        # self.iamge = pg.transform.rotozoom(self.img, 0, 0.1) # 修正予定 画像サイズは元画像の変更の方がよい
+        self.rect = self.image.get_rect()
+        # self.rect.center = (random.randrange(SCREEN_WIDTH, TILE_SIZE_X * stage_width), random.randrange(0, SCREEN_HEIGHT - (TILE_SIZE_Y * 5)))
+        self.rect.center = (400, -1000)
         self.vx = 1
         self.vy = 0
         self.is_on_ground = False
 
-    def update(self):
-        self.rect.center = (self.rect.centerx + 1 * self.vx, self.rect.centery)        
+    def update(self, camera_x):
+        print(camera_x)
+        self.rect.center = (self.rect.centerx - self.vx, self.rect.centery)        
+
+class Goal(pg.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        # self.image = pg.image.load("")
 
 class Score:
     def __init__(self):
@@ -172,11 +195,17 @@ def main():
     pg.display.set_caption("2Dアクションゲーム デモ")
     clock = pg.time.Clock()
 
-    bg_img = pg.image.load("fig/nightcity_star_bg1.png")
-    bg_flip = pg.transform.flip(bg_img, True, False)
+    bg_img = pg.image.load("fig/night_plain_bg.png")
+    # bg_flip = pg.transform.flip(bg_img, True, False)
     bg_width = bg_img.get_width()
     pg.mixer.music.load("fig/魔王魂(ファンタジー).mp3")
     pg.mixer.music.play(loops = -1)
+
+    # ground = Ground()
+    ground_img = pg.image.load("fig/ground2.png")
+    weeds_img = pg.image.load("fig/weeds(extend).png")
+    cloud_img = pg.image.load("fig/cloud(extend).png")
+    # ground_rect = ground
 
     # 2. ステージデータ (0=空, 1=ブロック)
     # 画面下部が地面、途中に浮島があるマップ
@@ -200,7 +229,6 @@ def main():
 
     probs = [0.5, 0.7, 0.9, 1.0, 1.0]
 
-    enemy_pos = (100, 100)
 
     # 3. ステージの「当たり判定用の四角形(Rect)」リストを作成
     # (ゲーム開始時に一度だけ計算する)
@@ -214,6 +242,7 @@ def main():
         for x, tile_type in enumerate(row):
             if tile_type == 1:
                 # (x座標, y座標, 幅, 高さ) のRectを作成
+                # block_rects.append(())
                 block_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y, TILE_SIZE_X, TILE_SIZE_Y), 1))
             elif tile_type == 2:
                 surface_rects.append((pg.Rect(x * TILE_SIZE_X, y * TILE_SIZE_Y + (TILE_SIZE_Y / 2), TILE_SIZE_X, TILE_SIZE_Y / 2), 2))
@@ -223,7 +252,7 @@ def main():
     player = Player() #プレイヤー
     enemys = pg.sprite.Group()
     for i in range(ENEMY_NUM):
-        enemys.add(Enemy(enemy_pos))
+        enemys.add(Enemy(len(map_data[0])))
     score = Score()
     
     camera_x = 0 #カメラの位置を初期化
@@ -243,8 +272,10 @@ def main():
                     player.move_left = True
                 if event.key == pg.K_RIGHT:
                     player.move_right = True
-                if event.key == pg.K_SPACE and player.is_on_ground:
-                    player.vy = JUMP_STRENGTH # 上向きの速度を与える
+                if event.key == pg.K_SPACE: #and player.is_on_ground:
+                    # player.vy = JUMP_STRENGTH # 上向きの速度を与える
+                    player.hover()
+                    print("hoverd")
                     player.is_on_ground = False
             
             # キーが離された時
@@ -279,7 +310,10 @@ def main():
         
         # player.vy += GRAVITY # 重力を速度に加算
         # player.rect.y += player.vy
-        gravity(player, surface_rects + floatland_rects)
+        all_blocks = surface_rects + floatland_rects
+        gravity(player, all_blocks)
+        for i in enemys:
+            gravity(i, all_blocks)
         # gravity(player,floatland_rects)
 
         # 8. 描画処理
@@ -291,14 +325,18 @@ def main():
         
 
         # プレイヤーを描画
+        prev_camera_x = camera_x
         camera_x = player.update(len(map_data[0]), [surface_rects, floatland_rects], camera_x)
         scroll_x = -camera_x % bg_width
+        scroll_speed = camera_x - prev_camera_x
         # print(camera_x)
         
         screen.blit(bg_img, (scroll_x - bg_width, -100))
         screen.blit(bg_img, (scroll_x, -100))
-        screen.blit(player.img, (player.rect.x - camera_x, player.rect.y))
-        
+        screen.blit(player.dire_img[player.direct], (player.rect.x - camera_x, player.rect.y))
+        enemys.update(scroll_speed)
+        for enemy in enemys:
+            screen.blit(enemy.image, (enemy.rect.centerx - camera_x, enemy.rect.centery))
         # ステージ（ブロック）を描画
         for block, type in block_rects:
             draw_rect = pg.Rect(
@@ -307,7 +345,8 @@ def main():
                 block.width,
                 block.height
             )
-            pg.draw.rect(screen, BROWN, draw_rect)
+            # pg.draw.rect(screen, BROWN, draw_rect)
+            screen.blit(ground_img, (block.x - camera_x, block.y, block.width, block.height))
         for block, type in surface_rects:
             draw_rect = pg.Rect(
                 block.x - camera_x,
@@ -315,14 +354,16 @@ def main():
                 block.width,
                 block.height
             )
-            pg.draw.rect(screen, (255, 0, 255), draw_rect)
+            # pg.draw.rect(screen, (0, 0, 0, 128), draw_rect)
+            screen.blit(weeds_img, (block.x - camera_x,block.y))
         for block,type in floatland_rects:
-            draw_rect = pg.Rect(                
-                block.x - camera_x,
-                block.y,
-                block.width,
-                block.height)
-            pg.draw.rect(screen, (255, 255, 255), draw_rect)
+            # draw_rect = pg.Rect(                
+            #     block.x - camera_x,
+            #     block.y,
+            #     block.width,
+            #     block.height)
+            # pg.draw.rect(screen, (255, 255, 255), draw_rect)
+            screen.blit(cloud_img, (block.x - camera_x, block.y))
         # 画面を更新
         # pg.display.flip()
         score.update()
