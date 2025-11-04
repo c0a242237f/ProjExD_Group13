@@ -1,12 +1,12 @@
-import pygame
+import pygame as pg
 import os
 import time
 
 # 1. 定数と初期設定
-pygame.init()
+pg.init()
 # サウンドミキサーを明示的に初期化（周波数、ビット深度、チャンネル数を指定）
-pygame.mixer.quit()  # 一度終了
-pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+pg.mixer.quit()  # 一度終了
+pg.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -32,9 +32,9 @@ C0C24001_BOMB_EXPLOSION_DURATION = 0.5  # 爆発エフェクトの表示時間(�
 C0C24001_BOMB_EXPLOSION_RADIUS = TILE_SIZE * 3  # 爆発範囲の半径
 
 # 画面設定
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("2Dアクションゲーム デモ")
-clock = pygame.time.Clock()
+screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pg.display.set_caption("2Dアクションゲーム デモ")
+clock = pg.time.Clock()
 
 # 2. ステージデータ (0=空, 1=ブロック)
 # 画面下部が地面、途中に浮島があるマップ
@@ -63,7 +63,7 @@ for y, row in enumerate(map_data):
     for x, tile_type in enumerate(row):
         if tile_type == 1:
             # (x座標, y座標, 幅, 高さ) のRectを作成
-            block_rects.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            block_rects.append(pg.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
 # 3.5 ボムコピー能力システムの定義
 # ========================================
@@ -133,7 +133,7 @@ class C0C24001_BombProjectile:
     - GIFアニメーション表示
     """
     def __init__(self, x, y, velocity_x=0, velocity_y=0):
-        self.rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
+        self.rect = pg.Rect(x, y, TILE_SIZE, TILE_SIZE)
         self.placed_time = time.time()  # 設置時刻
         self.is_exploded = False  # 爆発したか
         self.explosion_time = None  # 爆発時刻
@@ -232,11 +232,11 @@ class C0C24001_BombProjectile:
                 # 画像がない場合は円で表現
                 explosion_center = self.rect.center
                 # 外側の円(赤)
-                pygame.draw.circle(surface, RED, explosion_center, C0C24001_BOMB_EXPLOSION_RADIUS, 0)
+                pg.draw.circle(surface, RED, explosion_center, C0C24001_BOMB_EXPLOSION_RADIUS, 0)
                 # 中間の円(オレンジ)
-                pygame.draw.circle(surface, ORANGE, explosion_center, C0C24001_BOMB_EXPLOSION_RADIUS * 2 // 3, 0)
+                pg.draw.circle(surface, ORANGE, explosion_center, C0C24001_BOMB_EXPLOSION_RADIUS * 2 // 3, 0)
                 # 内側の円(黄色)
-                pygame.draw.circle(surface, (255, 255, 0), explosion_center, C0C24001_BOMB_EXPLOSION_RADIUS // 3, 0)
+                pg.draw.circle(surface, (255, 255, 0), explosion_center, C0C24001_BOMB_EXPLOSION_RADIUS // 3, 0)
         else:
             # 爆弾画像を描画
             surface.blit(bomb_image, self.rect.topleft)
@@ -245,7 +245,7 @@ class C0C24001_BombProjectile:
         """爆発範囲の矩形を返す"""
         if self.is_exploded:
             center = self.rect.center
-            explosion_rect = pygame.Rect(
+            explosion_rect = pg.Rect(
                 center[0] - C0C24001_BOMB_EXPLOSION_RADIUS,
                 center[1] - C0C24001_BOMB_EXPLOSION_RADIUS,
                 C0C24001_BOMB_EXPLOSION_RADIUS * 2,
@@ -255,25 +255,36 @@ class C0C24001_BombProjectile:
         return None
 
 # 4. プレイヤー設定
-# 画像を読み込み、ステージに合うサイズにスケーリング
+# 画像を読み込み、適切なサイズに縮小して表示
 # img/bom2.png を使う。見つからない・読み込めない場合は四角形で代替表示する。
-PLAYER_SIZE = TILE_SIZE * 3.0  # プレイヤーサイズを大きめに（タイルの3.0倍）
+PLAYER_DISPLAY_SIZE = TILE_SIZE * 2.0  # 表示サイズをタイルの2倍に設定
 try:
-    player_image_original = pygame.image.load(os.path.join("img", "bom2.png")).convert_alpha()
-    # ステージのタイルサイズに合わせてスケーリング（透過を保持するため smoothscale を使用）
-    player_image_original = pygame.transform.smoothscale(player_image_original, (PLAYER_SIZE, PLAYER_SIZE))
+    player_image_original = pg.image.load(os.path.join("img", "bom2.png")).convert_alpha()
+    original_width = player_image_original.get_width()
+    original_height = player_image_original.get_height()
+    print(f"プレイヤー画像を読み込みました: img/bom2.png (元サイズ: {original_width}x{original_height})")
+    # 表示サイズに合わせてスケーリング
+    player_image_original = pg.transform.smoothscale(player_image_original, (int(PLAYER_DISPLAY_SIZE), int(PLAYER_DISPLAY_SIZE)))
+    print(f"表示サイズに変更: {int(PLAYER_DISPLAY_SIZE)}x{int(PLAYER_DISPLAY_SIZE)}")
 except Exception:
-    # 画像がない場合は幅=TILE_SIZE//2, 高さ=TILE_SIZE の透明サーフェスに色を付ける
-    player_image_original = pygame.Surface((TILE_SIZE // 2, TILE_SIZE), pygame.SRCALPHA)
+    # 画像がない場合はデフォルトサイズ
+    PLAYER_DISPLAY_SIZE = TILE_SIZE * 2.0
+    player_image_original = pg.Surface((TILE_SIZE // 2, TILE_SIZE), pg.SRCALPHA)
     player_image_original.fill(GREEN)
+    print("プレイヤー画像が見つかりません。デフォルトサイズを使用します。")
 
 # 右向きと左向きの画像を用意（flip も透過を保持）
 player_image_right = player_image_original
-player_image_left = pygame.transform.flip(player_image_original, True, False)
+player_image_left = pg.transform.flip(player_image_original, True, False)
 player_image = player_image_right  # デフォルトは右向き
 
+# 画像の実際のサイズを取得
+PLAYER_IMAGE_WIDTH = PLAYER_DISPLAY_SIZE
+PLAYER_IMAGE_HEIGHT = PLAYER_DISPLAY_SIZE
+
 # プレイヤーの当たり判定用のRect(画像より少し小さめにして足元を調整)
-player_rect = pygame.Rect(100, 100, PLAYER_SIZE * 0.6, PLAYER_SIZE * 0.5)
+# 画像サイズに基づいて当たり判定を設定
+player_rect = pg.Rect(100, 100, PLAYER_IMAGE_WIDTH * 0.6, PLAYER_IMAGE_HEIGHT * 0.5)
 player_velocity_y = 0  # プレイヤーの垂直方向の速度
 is_on_ground = False     # 地面（ブロック）に接地しているか
 player_move_left = False # 左に移動中か
@@ -284,12 +295,12 @@ player_facing_right = True # プレイヤーの向き（True=右向き, False=�
 # 個人実装: 爆弾画像の読み込み (C0C24001)
 # ========================================
 try:
-    c0c24001_bomb_image = pygame.image.load(os.path.join("img", "bom3.png")).convert_alpha()
-    c0c24001_bomb_image = pygame.transform.smoothscale(c0c24001_bomb_image, (TILE_SIZE, TILE_SIZE))
+    c0c24001_bomb_image = pg.image.load(os.path.join("img", "bom3.png")).convert_alpha()
+    c0c24001_bomb_image = pg.transform.smoothscale(c0c24001_bomb_image, (TILE_SIZE, TILE_SIZE))
 except Exception:
     # 画像がない場合は黒い円で代替
-    c0c24001_bomb_image = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
-    pygame.draw.circle(c0c24001_bomb_image, BLACK, (TILE_SIZE // 2, TILE_SIZE // 2), TILE_SIZE // 2)
+    c0c24001_bomb_image = pg.Surface((TILE_SIZE, TILE_SIZE), pg.SRCALPHA)
+    pg.draw.circle(c0c24001_bomb_image, BLACK, (TILE_SIZE // 2, TILE_SIZE // 2), TILE_SIZE // 2)
 
 # 爆発エフェクト画像の読み込み（GIFアニメーション対応）
 try:
@@ -306,13 +317,13 @@ try:
         frame_index = 0
         while True:
             pil_gif.seek(frame_index)
-            # PILイメージをPygameサーフェスに変換
+            # PILイメージをpgサーフェスに変換
             frame = pil_gif.convert("RGBA")
             frame_data = frame.tobytes()
-            pygame_surface = pygame.image.fromstring(frame_data, frame.size, "RGBA")
+            pg_surface = pg.image.fromstring(frame_data, frame.size, "RGBA")
             # スケーリング
-            pygame_surface = pygame.transform.smoothscale(pygame_surface, (c0c24001_explosion_size, c0c24001_explosion_size))
-            c0c24001_explosion_frames.append(pygame_surface)
+            pg_surface = pg.transform.smoothscale(pg_surface, (c0c24001_explosion_size, c0c24001_explosion_size))
+            c0c24001_explosion_frames.append(pg_surface)
             frame_index += 1
     except EOFError:
         pass  # 全フレーム読み込み完了
@@ -335,9 +346,9 @@ except Exception as e:
 
 # 背景画像の読み込み
 try:
-    background_image = pygame.image.load(os.path.join("img", "haikei.jpg")).convert()
+    background_image = pg.image.load(os.path.join("img", "haikei.jpg")).convert()
     # 画面サイズに合わせてスケーリング
-    background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    background_image = pg.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
     print("背景画像を読み込みました: img/haikei.jpg")
 except Exception as e:
     # 画像がない場合は黒背景
@@ -359,7 +370,7 @@ sound_paths = [
 for sound_path in sound_paths:
     try:
         if os.path.exists(sound_path):
-            explosion_sound = pygame.mixer.Sound(sound_path)
+            explosion_sound = pg.mixer.Sound(sound_path)
             print(f"爆発音を読み込みました: {sound_path}")
             break
     except Exception as e:
@@ -384,20 +395,20 @@ for folder, filename in bgm_files:
     if os.path.exists(bgm_path):
         print(f"ファイルが見つかりました: {bgm_path}")
         try:
-            pygame.mixer.music.load(bgm_path)
-            pygame.mixer.music.set_volume(0.3)
-            pygame.mixer.music.play(-1)
+            pg.mixer.music.load(bgm_path)
+            pg.mixer.music.set_volume(0.3)
+            pg.mixer.music.play(-1)
             print(f"✓ BGMの再生を開始しました: {filename}")
             bgm_loaded = True
             break
-        except pygame.error as e:
+        except pg.error as e:
             print(f"✗ {filename} の読み込みに失敗: {e}")
             continue
 
 if not bgm_loaded:
     print("=" * 60)
     print("【BGMが再生できませんでした】")
-    print("MP3ファイルがPygameと互換性がない可能性があります。")
+    print("MP3ファイルがpgと互換性がない可能性があります。")
     print("")
     print("解決方法：")
     print("1. https://convertio.co/ja/mp3-ogg/ で変換")
@@ -426,29 +437,29 @@ running = True
 while running:
     
     # 6. イベント処理 (キー操作など)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
             running = False
         
         # キーが押された時
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_LEFT:
                 player_move_left = True
-            if event.key == pygame.K_RIGHT:
+            if event.key == pg.K_RIGHT:
                 player_move_right = True
-            if event.key == pygame.K_SPACE and is_on_ground:
+            if event.key == pg.K_SPACE and is_on_ground:
                 player_velocity_y = JUMP_STRENGTH # 上向きの速度を与える
                 is_on_ground = False
             
             # ========================================
             # 個人実装: 爆弾操作 (C0C24001)
             # ========================================
-            if event.key == pygame.K_b:
+            if event.key == pg.K_b:
                 # 爆弾能力を持っている場合のみ使用可能
                 if c0c24001_bomb_ability.has_ability:
                     # Shiftキーが押されている場合は投擲、それ以外は設置
-                    keys = pygame.key.get_pressed()
-                    if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+                    keys = pg.key.get_pressed()
+                    if keys[pg.K_LSHIFT] or keys[pg.K_RSHIFT]:
                         # 爆弾を投擲（前方に投げる）
                         bomb_x = player_rect.centerx - TILE_SIZE // 2
                         bomb_y = player_rect.centery - TILE_SIZE // 2
@@ -464,7 +475,7 @@ while running:
                         # 設置時に初期速度を設定（重力で落下させる）
                         new_bomb = C0C24001_BombProjectile(bomb_x, bomb_y, velocity_x=0, velocity_y=1)
                         c0c24001_bombs.append(new_bomb)
-            if event.key == pygame.K_k:
+            if event.key == pg.K_k:
                 # 近くの爆弾をキック
                 for bomb in c0c24001_bombs:
                     if not bomb.is_exploded and abs(bomb.velocity_x) < 1:  # 静止している爆弾のみ
@@ -479,10 +490,10 @@ while running:
                             break  # 1つだけキック
         
         # キーが離された時
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT:
+        if event.type == pg.KEYUP:
+            if event.key == pg.K_LEFT:
                 player_move_left = False
-            if event.key == pygame.K_RIGHT:
+            if event.key == pg.K_RIGHT:
                 player_move_right = False
 
     # 7. プレイヤーのロジック更新 (移動と当たり判定)
@@ -554,7 +565,7 @@ while running:
     
     # ステージ（ブロック）を描画
     for block in block_rects:
-        pygame.draw.rect(screen, BROWN, block)
+        pg.draw.rect(screen, BROWN, block)
     
     # 爆弾を描画 (C0C24001)
     for bomb in c0c24001_bombs:
@@ -562,15 +573,15 @@ while running:
         
     # プレイヤーを描画(画像を使う)
     # 当たり判定Rectの中央下部に画像を配置(足元を合わせる)
-    player_draw_x = player_rect.centerx - PLAYER_SIZE // 2
-    player_draw_y = player_rect.bottom - PLAYER_SIZE * 0.75  # 地面に少しめり込ませて足をしっかり接地
+    player_draw_x = player_rect.centerx - PLAYER_IMAGE_WIDTH // 2
+    player_draw_y = player_rect.bottom - PLAYER_IMAGE_HEIGHT  # 足元を当たり判定の底に合わせる
     screen.blit(player_image, (player_draw_x, player_draw_y))
     
     # 画面を更新
-    pygame.display.flip()
+    pg.display.flip()
     
     # 9. FPS (フレームレート) の制御
     clock.tick(60) # 1秒間に60回ループが回るように調整
 
-# ループが終了したらPygameを終了
-pygame.quit()
+# ループが終了したらpgを終了
+pg.quit()
