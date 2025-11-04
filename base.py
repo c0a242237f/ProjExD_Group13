@@ -12,30 +12,34 @@ TILE_SIZE_X, TILE_SIZE_Y = 100, 40 # タイルのサイズ
 ADD_STAGE_BLOCK = 100 # ステージの拡張幅
 GRAVITY = 0.8         # 重力
 JUMP_STRENGTH = -15   # ジャンプ力 (Y軸は上がマイナス)
-HOVER_AIR_TIME = 60
+HOVER_AIR_TIME = 60   # ホバーエフェクトの表示時間(フレーム単位)
 PLAYER_SPEED = 100      # 左右の移動速度
 PLAYER_HP = 5
-NO_DAMAGE_TIME = 120
-PLAYER_POWER = 10
+NO_DAMAGE_TIME = 120 # 無敵時間(フレーム単位)
+PLAYER_POWER = 10 # プレイヤーの攻撃力
 ENEMY_NUM = 1         # 敵の数
 ENEMY_SPEED = 1
 #ーーーーーーーーーーーーーーーーーーーーーーーーーー
 #---まだ
-def start_page(screen, clock):
+def start_page(screen: pg.surface, clock: pg.time.Clock) -> int:
+    """
+    スタート画面を表示する関数
+    引数: スクリーンsurface, pgのクロック  
+    戻り値: int(開始なら0, 終了なら-1)
+    """
     bg_img = pg.image.load("fig/night_plain_bg.png")
     title = Text("GO KOUKATON (TUT)", 80, (100, 300))
     start_button = Text("Start", 80, (100, 100))
     end_button = Text("Quit", 80, (500, 100))
 
-    mouse_x, mouse_y = -1000, -1000
+    mouse_x, mouse_y = -1000, -1000 # マウス位置をあり得ない位置で初期化
     while True:
         for event in pg.event.get():
-            #ゲーム終了
             if event.type == pg.QUIT:
                 return -1
         
             if event.type == pg.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = event.pos
+                mouse_x, mouse_y = event.pos # マウスの位置を取得
  
         screen.blit(bg_img, (0, 0))
         screen.blit(title.txt, (title.x, title.y))
@@ -43,30 +47,34 @@ def start_page(screen, clock):
         screen.blit(end_button.txt, (end_button.x, end_button.y))
         
         if start_button.x < mouse_x < start_button.x + start_button.width and end_button.y < mouse_y < end_button.y + end_button.height:
-            return 0
+            return 0 # スタートボタンをクリック
         if end_button.x < mouse_x < end_button.x + end_button.width and end_button.y < mouse_y < end_button.y + end_button.height:
-            return -1
-        
+            return -1 # Quitボタンをクリック
+                
         pg.display.update()
         clock.tick(60)
-#------
 
-#---まだ
-def gameover(screen, clock):
+
+def gameover(screen: pg.surface, clock: pg.time.Clock) -> int:
+    """
+    ゲームオーバー画面を表示する関数
+    引数: スクリーンsurface, pgのクロック
+    戻り値: int(開始なら0, 終了なら-1)    
+    """
     bg_img = pg.image.load("fig/night_plain_bg.png")
     txt = Text("Game Over", 80, (100, 300))
     retry = Text("Retry", 80, (100, 100))
     quit = Text("Quit", 80, (500, 100))
-    mouse_x, mouse_y = -1000, -1000
+
+    mouse_x, mouse_y = -1000, -1000 # マウス位置をあり得ない位置で初期化
 
     while True:
         for event in pg.event.get():
-            #ゲーム終了
             if event.type == pg.QUIT:
                 return -1
         
             if event.type == pg.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = event.pos
+                mouse_x, mouse_y = event.pos # マウス位置を取得
  
         screen.blit(bg_img, (0, 0))
         screen.blit(txt.txt, (txt.x, txt.y))
@@ -74,30 +82,34 @@ def gameover(screen, clock):
         screen.blit(quit.txt, (quit.x, quit.y))
         
         if retry.x < mouse_x < retry.x + retry.width and retry.y < mouse_y < retry.y + retry.height:
-            return 0
+            return 0 # リトライを押された
         if quit.x < mouse_x < quit.x + quit.width and quit.y < mouse_y < quit.y + quit.height:
-            return -1
+            return -1 # 終了を押された
         
         pg.display.update()
         clock.tick(60)
-#------
 
-#---まだ
-def game_clear(screen, clock, Score):
+
+def game_clear(screen: pg.surface, clock: pg.time.Clock) -> int:
+    """
+    クリア画面を表示する関数
+    引数: スクリーンsurface, pgのクロック
+    戻り値: int(再プレイなら0, 終了なら-1)
+    """
     bg_img = pg.image.load("fig/night_plain_bg.png")
     txt = Text("Game Clear", 80, (100, 300))
     retry = Text("Retry", 80, (100, 100))
     quit = Text("Quit", 80, (500, 100))
-    mouse_x, mouse_y = -1000, -1000
+
+    mouse_x, mouse_y = -1000, -1000 # マウス位置をあり得ない位置で初期化
 
     while True:
         for event in pg.event.get():
-            #ゲーム終了
             if event.type == pg.QUIT:
                 return -1
         
             if event.type == pg.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = event.pos
+                mouse_x, mouse_y = event.pos # マウス位置を取得
  
         screen.blit(bg_img, (0, 0))
         screen.blit(txt.txt, (txt.x, txt.y))
@@ -105,15 +117,15 @@ def game_clear(screen, clock, Score):
         screen.blit(quit.txt, (quit.x, quit.y))
         
         if retry.x < mouse_x < retry.x + retry.width and retry.y < mouse_y < retry.y + retry.height:
-            return 0
+            return 0 # リトライを押された
         if quit.x < mouse_x < quit.x + quit.width and quit.y < mouse_y < quit.y + quit.height:
-            return -1
+            return -1 # 終了を押された
         
         pg.display.update()
         clock.tick(60)
 #------
 
-def extend(map_data: "list[list[int]]", add_stage_width: "int", probs: "list[int]") -> list[list[int]]:
+def extend(map_data: list[list[int]], add_stage_width: int, probs: list[int]) -> list[list[int]]:
     """
     ステージを拡張する関数。地面ブロックとして追加する
     内容: 下2マスは確定で地面。それ以降は拡張幅まで、下のマスが地面 and 1つ前の下のマスが地面 の時に生成
@@ -138,7 +150,7 @@ def extend(map_data: "list[list[int]]", add_stage_width: "int", probs: "list[int
                 map_data[layer].append(0)
     return map_data
 
-def ground_surface(map_data: "list[list[int]]") -> "list[list[int]]":
+def ground_surface(map_data: list[list[int]]) -> list[list[int]]:
     """
     地面ブロックの上に地表ブロックを配置する関数
     内容: 下のマスが地面 and 自分のマスが無 の時に生成
@@ -151,7 +163,7 @@ def ground_surface(map_data: "list[list[int]]") -> "list[list[int]]":
                 map_data[i][j] = 2
     return map_data
 
-def make_float_land(map_data: "list[list[int]]", add_range: "tuple[int]", num: "int") -> "list[list[int]]":
+def make_float_land(map_data: list[list[int]], add_range: tuple[int], num: int) -> list[list[int]]:
     """
     浮島を生成する関数
     内容: 自身が無の時、下のマスが無 and 2マス下が無 の時に浮島を生成
@@ -175,7 +187,7 @@ def make_float_land(map_data: "list[list[int]]", add_range: "tuple[int]", num: "
     return map_data
 
 #---修正
-def walled(instance: "object", blocks: "list[tuple[object, int]]", camera_x: "int") -> None:
+def walled(instance: object, blocks: list[tuple[object, int]]) -> None:
     """
     壁衝突判定を行う関数
     内容: 壁に衝突したとき、自身の位置を壁端に合わせる。
@@ -190,7 +202,7 @@ def walled(instance: "object", blocks: "list[tuple[object, int]]", camera_x: "in
 #-------
 
 #---修正
-def gravity(instance: "object", blocks: "list[tuple[object, int]]") -> None:
+def gravity(instance: object, blocks: list[tuple[object, int]]) -> None:
     """
     重力を適用し、地面との衝突判定を行う関数
     内容: 地面にぶつかった際、y方向の速度を0にし、座標を地面の上に合わせる
@@ -212,7 +224,12 @@ def gravity(instance: "object", blocks: "list[tuple[object, int]]") -> None:
                     instance.vy = 0 # 上昇速度をリセット（頭を打った）
 #------
 
-def no_damage(instance, flag = 0):
+def no_damage(instance: object, flag: int = 0) -> None:
+    """
+    無敵時間中の処理を行う関数
+    内容: 無敵時間中の画像表示、無敵時間の減算
+    引数: 無敵時間を適用するインスタンス, フラグ(0なら無敵時間中, 1なら無敵になる前)
+    """
     if instance.no_damage_time == 0 and flag == 1:
         instance.no_damage_time = NO_DAMAGE_TIME
     elif instance.no_damage_time > 0:
@@ -248,10 +265,10 @@ class Assets:
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
         ]
-        self.probs = [0.5, 0.7, 0.9, 1.0, 1.0]
+        self.probs = [0.5, 0.7, 0.9, 1.0, 1.0] # ブロックを生成する確率(左から上段)
 
 class Text:
-    def __init__(self, string, str_size, pos):
+    def __init__(self, string: str, str_size: int, pos: tuple[int,int]) -> None:
         self.txt = pg.font.Font(None, str_size)
         self.txt = self.txt.render(string, True, (255, 255, 255))
         self.x = pos[0]
@@ -313,7 +330,7 @@ class Player(pg.sprite.Sprite):
 
         self.rect.x += self.vx
 
-        walled(self, all_blocks, camera_x)
+        walled(self, all_blocks)
         gravity(self, floar_blocks)
         no_damage(self, 0)
 
