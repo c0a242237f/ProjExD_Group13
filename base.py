@@ -303,7 +303,7 @@ class FireWeapon(pg.sprite.Sprite):
     """
     def __init__(self, sx: int, sy: int, vx: float):
         super().__init__()
-        weapon_img = pg.image.load("fig/fire.png")
+        weapon_img = pg.image.load("fig/fire_nageru.png")
         self.image = pg.transform.rotozoom(weapon_img, 0, 1)
         self.rect = self.image.get_rect()
         self.rect.center = (int(sx), int(sy))
