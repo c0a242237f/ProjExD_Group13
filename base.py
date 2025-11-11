@@ -15,11 +15,12 @@ ADD_STAGE_BLOCK = 50 # ステージの拡張幅
 
 #共通の挙動
 GRAVITY = 0.8         # 重力
-NO_DAMAGE_TIME = 120 # 無敵時間(フレーム単位)
+PLAYER_NO_DAMAGE_TIME = 120 # 無敵時間(フレーム単位)
+ENEMY_NO_DAMAGE_TIME = 30
 
 #プレイヤー挙動
 PLAYER_SPEED = 10      # 左右の移動速度
-PLAYER_HP = 5
+PLAYER_HP = 8
 JUMP_STRENGTH = -15   # ジャンプ力 (Y軸は上がマイナス)
 HOVER_AIR_TIME = 60   # ホバーエフェクトの表示時間(フレーム単位)
 BULLET_SPEED = 10 # カジノ状態の弾の速度
@@ -40,7 +41,7 @@ def start_page(screen: pg.surface, clock: pg.time.Clock) -> int:
     戻り値: int(開始なら0, 終了なら-1)
     """
     bg_img = pg.image.load("fig/night_plain_bg.png") # 背景画像
-    title = Text("GO KOUKATON (TUT)", 80, (100, 300))
+    title = Text("星のこうかとん", 80, (100, 300), "ja", (128, 255, 128))
     start_button = Text("Start", 80, (100, 100))
     end_button = Text("Quit", 80, (500, 100))
     credit = Text("BGM: 魔王魂", 20, (SCREEN_WIDTH - 200, SCREEN_HEIGHT - 50), "ja")
@@ -264,7 +265,10 @@ def no_damage(instance: object, flag: int = 0) -> None:
     引数: 無敵時間を適用するインスタンス, フラグ(0なら無敵時間中, 1なら無敵になる前)
     """
     if instance.no_damage_time == 0 and flag == 1:
-        instance.no_damage_time = NO_DAMAGE_TIME
+        if instance.type == "player":
+            instance.no_damage_time = PLAYER_NO_DAMAGE_TIME
+        else:
+            instance.no_damage_time = ENEMY_NO_DAMAGE_TIME
     elif instance.no_damage_time > 0:
         if instance.no_damage_time % 10 == 0 and instance.no_damage_time % 20 != 0:
             instance.patarn = (instance.patarn[0], 0, "normal")
@@ -320,7 +324,7 @@ class Assets:
 
 
 class Text:
-    def __init__(self, string: str, str_size: int, pos: tuple[int,int], lang: str = None) -> None:
+    def __init__(self, string: str, str_size: int, pos: tuple[int,int], lang: str = None, color = (255, 255, 255)) -> None:
         """
         テキストを初期化するメソッド
         内容: テキストの文字・サイズ・位置を一括設定する
@@ -330,7 +334,7 @@ class Text:
             self.txt = pg.font.SysFont("msgothic", str_size) # 日本語はmsゴシックで表示
         else:
             self.txt = pg.font.Font(None, str_size)
-        self.txt = self.txt.render(string, True, (255, 255, 255))
+        self.txt = self.txt.render(string, True, color)
         self.x = pos[0]
         self.y = pos[1]
         self.width = self.txt.get_width()
@@ -343,6 +347,7 @@ class Player(pg.sprite.Sprite):
     """
     def __init__(self):
         super().__init__()
+        self.type = "player"
         self.name = "normal"
         self.original = pg.image.load("fig/normal.png")
         self.img = self.original
@@ -359,7 +364,7 @@ class Player(pg.sprite.Sprite):
 
         self.hover_num = 0
         self.hp = PLAYER_HP
-        self.no_damage_time = NO_DAMAGE_TIME
+        self.no_damage_time = PLAYER_NO_DAMAGE_TIME
 
         self.attacking = False # 攻撃中か
         self.is_on_ground = False # 地面についているか
@@ -725,7 +730,7 @@ class KajinoBullet(pg.sprite.Sprite):
         self.rect = self.img.get_rect()
         self.rect.center = instance.rect.center
         self.vx = 15 * instance.patarn[0]
-        self.time = 300
+        self.time = 180
 
     def update(self):
         self.rect.x += int(self.vx)
@@ -740,7 +745,7 @@ class Enemy(pg.sprite.Sprite):
     """敵の基本挙動・判定"""
     def __init__(self, pos: tuple[int, int]):
         super().__init__()
-
+        self.type = "enemy"
         self.name = "normal"
         self.original = pg.image.load("fig/troia1.png")
         self.img = self.original
@@ -756,7 +761,7 @@ class Enemy(pg.sprite.Sprite):
                               }
 
         self.hp = 5
-        self.no_damage_time = NO_DAMAGE_TIME
+        self.no_damage_time = ENEMY_NO_DAMAGE_TIME
         self.power = 1
         
         self.is_on_ground = False
@@ -1220,10 +1225,10 @@ def main():
                         content.hovers.add(HoverAir(player, -1, 1))
                         content.hovers.add(HoverAir(player, 1, 0))
                         player.is_on_ground = False
-
-                if event.key == pg.K_p: # pキーでパンチ
-                    if not player.attacking:
-                        content.player_attacks.add(player.panch())
+                if player.name == "normal":
+                    if event.key == pg.K_p: # pキーでパンチ
+                        if not player.attacking:
+                            content.player_attacks.add(player.panch())
 
                 if event.key == pg.K_a: # aキーで吸収
                     content.absorbs.add(Absorb())
