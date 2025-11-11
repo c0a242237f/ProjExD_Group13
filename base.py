@@ -16,7 +16,7 @@ ADD_STAGE_BLOCK = 50 # ステージの拡張幅
 #共通の挙動
 GRAVITY = 0.8         # 重力
 PLAYER_NO_DAMAGE_TIME = 120 # 無敵時間(フレーム単位)
-ENEMY_NO_DAMAGE_TIME = 30
+ENEMY_NO_DAMAGE_TIME = 60
 
 #プレイヤー挙動
 PLAYER_SPEED = 10      # 左右の移動速度
@@ -78,7 +78,7 @@ def gameover(screen: pg.surface, clock: pg.time.Clock) -> int:
     戻り値: int(開始なら0, 終了なら-1)    
     """
     bg_img = pg.image.load("fig/night_plain_bg.png") # 背景画像
-    txt = Text("Game Over", 80, (100, 300))
+    txt = Text("!!ゲームオーバー!!", 60, (100, 300), "ja", (128, 255, 128))
     retry = Text("Retry", 80, (100, 100))
     quit = Text("Quit", 80, (500, 100))
 
@@ -113,7 +113,7 @@ def game_clear(screen: pg.surface, clock: pg.time.Clock) -> int:
     戻り値: int(再プレイなら0, 終了なら-1)
     """
     bg_img = pg.image.load("fig/night_plain_bg.png")
-    txt = Text("Game Clear", 80, (100, 300))
+    txt = Text("！！ゲームクリア！！", 60, (100, 300), "ja", (128, 255, 128))
     retry = Text("Retry", 80, (100, 100))
     quit = Text("Quit", 80, (500, 100))
 
@@ -324,7 +324,7 @@ class Assets:
 
 
 class Text:
-    def __init__(self, string: str, str_size: int, pos: tuple[int,int], lang: str = None, color = (255, 255, 255)) -> None:
+    def __init__(self, string: str, str_size: int, pos: tuple[int,int], lang: str = "en", color = (255, 255, 255)) -> None:
         """
         テキストを初期化するメソッド
         内容: テキストの文字・サイズ・位置を一括設定する
@@ -345,7 +345,7 @@ class Player(pg.sprite.Sprite):
     """
     プレイヤーを司るクラス
     """
-    def __init__(self):
+    def __init__(self, instance = None):
         super().__init__()
         self.type = "player"
         self.name = "normal"
@@ -354,6 +354,12 @@ class Player(pg.sprite.Sprite):
         self.flip = pg.transform.flip(self.original, True, False)
         self.punch = pg.image.load("fig/punch.png")
         self.rect = self.img.get_rect()
+        if instance is None:
+            self.rect.center = (100, 0)
+            self.hp = PLAYER_HP
+        else: 
+            self.rect.center = instance.rect.center
+            self.hp = instance.hp
         self.vx = 0
         self.vy = 0
         self.patarn = (1, 0, "normal") # プレイヤーの画像を選択する用のパターン
@@ -363,7 +369,6 @@ class Player(pg.sprite.Sprite):
                               }
 
         self.hover_num = 0
-        self.hp = PLAYER_HP
         self.no_damage_time = PLAYER_NO_DAMAGE_TIME
 
         self.attacking = False # 攻撃中か
@@ -577,6 +582,7 @@ class FireAbility(Player):
         self.img = pg.transform.rotozoom(self.img, 0, 0.1)
         self.flip = pg.transform.flip(self.img, True, False)
         self.rect = instance.rect  # 既存の player_rect を共有
+        self.hp = instance.hp
         self.breathing = False
         self.patarn_to_img = {(1, 0, "normal") : self.img, (-1, 0, "normal") : self.flip,
                               (1, 0, "no_damage") : pg.transform.laplacian(self.img), (-1, 0, "no_damage") : pg.transform.laplacian(self.flip),
@@ -607,6 +613,7 @@ class BombAbility(Player):
         self.img = pg.image.load("fig/bomb_ability.png").convert_alpha()
         self.flip = pg.transform.flip(self.img, True, False)
         self.rect = instance.rect
+        self.hp = instance.hp
         self.patarn_to_img = {(1, 0, "normal"): self.img, (-1, 0, "normal"): self.flip,
                               (1, 0, "no_damage"): pg.transform.laplacian(self.img), (-1, 0, "no_damage"): pg.transform.laplacian(self.flip),
                               }
@@ -712,6 +719,7 @@ class KajinoAbility(Player):
         self.img = pg.transform.rotozoom(self.img, 0, 0.1)
         self.flip = pg.transform.flip(self.img, True, False)
         self.rect = instance.rect
+        self.hp = instance.hp
         self.patarn_to_img = {(1, 0, "normal"): self.img, (-1, 0, "normal"): self.flip,
                         (1, 0, "no_damage"): pg.transform.laplacian(self.img), (-1, 0, "no_damage"): pg.transform.laplacian(self.flip),
                         }
@@ -1229,9 +1237,13 @@ def main():
                     if event.key == pg.K_p: # pキーでパンチ
                         if not player.attacking:
                             content.player_attacks.add(player.panch())
-
-                if event.key == pg.K_a: # aキーで吸収
-                    content.absorbs.add(Absorb())
+                    
+                    if event.key == pg.K_a: # aキーで吸収
+                        content.absorbs.add(Absorb())
+                
+                if player.name != "normal":
+                    if event.key == pg.K_LCTRL:
+                        player = Player(player)
 
                 if player.name == "fire": 
 
